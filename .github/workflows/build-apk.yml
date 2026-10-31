@@ -1,3 +1,5 @@
+
+
 name: Generar APK Stretch Mobile
 
 on:
@@ -5,16 +7,18 @@ on:
   push:
     branches:
       - principal
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Descargar proyecto
+      - name: Descargar repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -24,22 +28,19 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Buscar archivo Gradle
+      - name: Revisar archivo ZIP
         run: |
-          find . -name "build.gradle.kts" -print
+          echo "ARCHIVOS DEL REPOSITORIO:"
+          ls -la
+          echo "CONTENIDO DEL ZIP:"
+          unzip -l StretchMobile_Android_1.0.2-2.zip | head -80
 
-      - name: Buscar proyecto Android
+      - name: Extraer proyecto
         run: |
-          find . -name "settings.gradle.kts" -o -name "build.gradle.kts"
+          unzip -o StretchMobile_Android_1.0.2-2.zip -d proyecto -x '.github/*'
 
-      - name: Compilar APK
+      - name: Buscar archivos Android
         run: |
-          cd "$(dirname "$(find . -name settings.gradle.kts | head -n 1)")"
-          gradle assembleDebug
-  
+          echo "BUSCANDO CONFIGURACION:"
+          find proyecto -type f \( -name "settings.gradle.kts" -o -name "build.gradle.kts" \)
 
-      - name: Guardar APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Stretch-Mobile-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
