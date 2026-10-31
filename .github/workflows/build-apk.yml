@@ -1,4 +1,5 @@
 
+
 name: Generar APK Stretch Mobile
 
 on:
@@ -31,36 +32,30 @@ jobs:
         run: |
           unzip -o StretchMobile_Android_1.0.2-2.zip -d proyecto -x '.github/*'
 
-      - name: Corregir Java y Kotlin
+      - name: Forzar Java y Kotlin a versión 17
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          cat >> proyecto/app/build.gradle.kts <<'EOF'
 
-          p = Path("proyecto/app/build.gradle.kts")
-          s = p.read_text()
+          // Compatibilidad Java y Kotlin
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+          }
 
-          s = s.replace(
-              "sourceCompatibility = JavaVersion.VERSION_1_8",
-              "sourceCompatibility = JavaVersion.VERSION_17"
-          )
-          s = s.replace(
-              "targetCompatibility = JavaVersion.VERSION_1_8",
-              "targetCompatibility = JavaVersion.VERSION_17"
-          )
-
-          if "compileOptions" in s and "VERSION_17" not in s:
-              s = s.replace("VERSION_1_8", "VERSION_17")
-
-          p.write_text(s)
-          print("Configuración actualizada")
-          PY
+          tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          EOF
 
       - name: Compilar APK
         run: gradle -p proyecto assembleDebug --stacktrace
 
       - name: Comprobar APK
-        run: |
-          test -f proyecto/app/build/outputs/apk/debug/app-debug.apk
+        run: test -f proyecto/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
