@@ -28,8 +28,15 @@ jobs:
         run: |
           find . -name "build.gradle.kts" -print
 
+      - name: Buscar proyecto Android
+        run: |
+          find . -name "settings.gradle.kts" -o -name "build.gradle.kts"
+
       - name: Compilar APK
-        run: gradle assembleDebug
+        run: |
+          cd "$(dirname "$(find . -name settings.gradle.kts | head -n 1)")"
+          gradle assembleDebug
+  
 
       - name: Guardar APK
         uses: actions/upload-artifact@v4
