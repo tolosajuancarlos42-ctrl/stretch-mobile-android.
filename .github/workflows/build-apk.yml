@@ -31,20 +31,28 @@ jobs:
         run: |
           unzip -o StretchMobile_Android_1.0.2-2.zip -d proyecto -x '.github/*'
 
-      - name: Corregir compatibilidad Java
+      - name: Corregir Java y Kotlin
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          archivo = Path("proyecto/app/build.gradle.kts")
-          if not archivo.exists():
-              raise SystemExit("No se encontró app/build.gradle.kts")
+          p = Path("proyecto/app/build.gradle.kts")
+          s = p.read_text()
 
-          texto = archivo.read_text()
-          texto = texto.replace("VERSION_1_8", "VERSION_17")
-          archivo.write_text(texto)
+          s = s.replace(
+              "sourceCompatibility = JavaVersion.VERSION_1_8",
+              "sourceCompatibility = JavaVersion.VERSION_17"
+          )
+          s = s.replace(
+              "targetCompatibility = JavaVersion.VERSION_1_8",
+              "targetCompatibility = JavaVersion.VERSION_17"
+          )
 
-          print("Configuración Java actualizada a Java 17")
+          if "compileOptions" in s and "VERSION_17" not in s:
+              s = s.replace("VERSION_1_8", "VERSION_17")
+
+          p.write_text(s)
+          print("Configuración actualizada")
           PY
 
       - name: Compilar APK
@@ -52,13 +60,10 @@ jobs:
 
       - name: Comprobar APK
         run: |
-          find proyecto -type f -name "*.apk"
           test -f proyecto/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Subir APK
+      - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
           name: Stretch-Mobile-APK
           path: proyecto/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-
