@@ -1,5 +1,4 @@
 
-
 name: Generar APK Stretch Mobile
 
 on:
@@ -17,30 +16,52 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Java
-        uses: actions/setup-java@v5
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Configurar Android
+        uses: android-actions/setup-android@v3
 
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
 
-      - name: Revisar archivo ZIP
-        run: |
-          echo "ARCHIVOS DEL REPOSITORIO:"
-          ls -la
-          echo "CONTENIDO DEL ZIP:"
-          unzip -l StretchMobile_Android_1.0.2-2.zip | head -80
-
-      - name: Extraer proyecto
+      - name: Extraer proyecto Android
         run: |
           unzip -o StretchMobile_Android_1.0.2-2.zip -d proyecto -x '.github/*'
 
-      - name: Buscar archivos Android
+      - name: Corregir compatibilidad Java
         run: |
-          echo "BUSCANDO CONFIGURACION:"
-          find proyecto -type f \( -name "settings.gradle.kts" -o -name "build.gradle.kts" \)
+          python3 - <<'PY'
+          from pathlib import Path
+
+          archivo = Path("proyecto/app/build.gradle.kts")
+          if not archivo.exists():
+              raise SystemExit("No se encontró app/build.gradle.kts")
+
+          texto = archivo.read_text()
+          texto = texto.replace("VERSION_1_8", "VERSION_17")
+          archivo.write_text(texto)
+
+          print("Configuración Java actualizada a Java 17")
+          PY
+
+      - name: Compilar APK
+        run: gradle -p proyecto assembleDebug --stacktrace
+
+      - name: Comprobar APK
+        run: |
+          find proyecto -type f -name "*.apk"
+          test -f proyecto/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Stretch-Mobile-APK
+          path: proyecto/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
 
