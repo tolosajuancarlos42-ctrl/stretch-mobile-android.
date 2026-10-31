@@ -24,10 +24,9 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Extraer proyect
+      - name: Corregir versión de Java
         run: |
-          unzip -t StretchMobile_Android_1.0.2-2.zip
-          unzip -o StretchMobile_Android_1.0.2-2.zip -d . -x '.github/*'
+          sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' app/build.gradle.kts
 
       - name: Compilar APK
         run: gradle assembleDebug
