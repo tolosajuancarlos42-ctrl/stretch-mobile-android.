@@ -25,7 +25,10 @@ jobs:
           gradle-version: '8.10.2'
 
       - name: Extraer proyecto
-        run: unzip -o StretchMobile_Android_1.0.2.zip -d .
+        run: |
+          ls -la
+          unzip -t StretchMobile_Android_1.0.2.zip
+          unzip -o StretchMobile_Android_1.0.2.zip -d . -x '.github/*'
 
       - name: Compilar APK
         run: gradle assembleDebug
